@@ -7,6 +7,10 @@ module.exports = function (sequelize, DataTypes) {
         role: {
             type: DataTypes.STRING(20),
             allowNull: false
+        },
+        type:{
+            type: DataTypes.STRING(20),
+            allowNull: false
         }
 
     }, {

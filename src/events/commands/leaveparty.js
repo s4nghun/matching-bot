@@ -3,9 +3,9 @@ import { invitePlayer } from '../../services/party.cjs';
 
 const create = () => {
 	const command = new SlashCommandBuilder()
-		.setName('inviteparty')
+		.setName('leaveparty')
 		.setDescription(
-			'Send an invitation request to a tagged user *Only guild master is allowed to use this command'
+			'Leave your current party'
 		)
 		.addUserOption(option =>
 			option.setName('user')
@@ -20,8 +20,8 @@ const invoke = async (interaction) => {
 	const guild = interaction.guild;
 	console.log(interaction.options.getUser('user'))
 	let inviteeId = await interaction.options.getUser('user').id
-	let result = await invitePlayer({inviteeId, inviterId: interaction.member.id})
-	console.log(result.status)
+	await invitePlayer({inviteeId, inviterId: interaction.member.id})
+	
 	return await interaction.reply({ content: `You are not a guild master!`, ephemeral: true });
 };
 

@@ -4,26 +4,31 @@ const { db } = require('../models/index.cjs');
 
 const { Op } = db.Sequelize;
 
-async function createPlayer({ playerId, roles }) {
+async function createPlayer({ partyIds, party, type }) {
     try {
-        let count = await db['Player'].count({
+        let queryList = []
+        let count = await db['Player'].findAll({
             where: {
-                playerId: playerId
+                playerId: {[Op.in]: partyIds}
             }
         })
-        if (count > 0) {
-            return { status: false, msg: 'already in queue' }
+        let queued = await count.map(v=>v.playerId)
+        if (count.length > 0) {
+            return { status: false, msg: 'already in queue', data: queued }
         }
-        let queryList = []
+
         await Promise.all(
-            roles.map(v => {
-                queryList = [
-                    ...queryList,
-                    {
-                        playerId,
-                        role: v
-                    }
-                ]
+            party.map(async member=>{
+                await member.roles.map(role=>{
+                    queryList = [
+                        ...queryList,
+                        {
+                            playerId: member.id,
+                            role,
+                            type
+                        }
+                    ]
+                })
             })
         )
         await db['Player'].bulkCreate(queryList)
@@ -34,9 +39,13 @@ async function createPlayer({ playerId, roles }) {
 
 }
 
-async function removePlayer() {
+async function removePlayer({group}) {
     try {
-
+        await db['Player'].destroy({
+            where:{
+                playerId: {[Op.in]: group}
+            }
+        })
     } catch (e) {
         throw e
     }
@@ -44,7 +53,7 @@ async function removePlayer() {
 
 async function findPlayer({ role, exclude }) {
     try {
-        db['Player'].findOne({
+        await db['Player'].findOne({
             where: {
                 playerId: { [Op.not]: exclude },
                 role

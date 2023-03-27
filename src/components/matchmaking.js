@@ -16,7 +16,7 @@ export default async function MatchMaker(interaction, joined) {
 	const row = new ActionRowBuilder()
 		.addComponents(
 			new ButtonBuilder()
-				.setCustomId(`prev`)
+				.setCustomId(`quit:${interaction.member.id}`)
 				.setLabel('Quit')
 				.setStyle(ButtonStyle.Danger),
 		)
@@ -29,16 +29,10 @@ export default async function MatchMaker(interaction, joined) {
 		);
 	console.log('<a:albionoffline:598828015132213259>')
 	const embed = new EmbedBuilder()
-		.setTitle(`<:crossed_swords:1089748938334146560> Match Making`)
+		.setTitle(`<:crossed_swords:1089748938334146560> Match Making <t:12345:d>`)
 		.addFields({ name: '<:family:1089750064735453205> 매칭 중', value: val })
-		//.addFields({ name: '<:family:1089750064735453205>', value: `` })
 		.setColor('Aqua')
-		//.setFooter({ text: `Page( ${page}/${maxPage} )` })
 		.setTimestamp();
-	// .setAuthor({
-	// 	name: 'MatchMaker',
-	// 	iconURL: guild.iconURL(),
-	// });
 
 	return { embed, row }
 }
