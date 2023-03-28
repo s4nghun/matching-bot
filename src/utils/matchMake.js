@@ -107,7 +107,6 @@ async function MMLogic(groupSize, groupType) {
             }
         }
 
-        // If no available role matches the player's preferred roles, assign the player to the first available role
         if (!roleFound) {
             team.players.push({
                 id: player.id,
