@@ -38,7 +38,6 @@ export default async function MatchMaker(interaction, joined, size, type_str) {
 				.setStyle(ButtonStyle.Primary)
 				.setDisabled(true),
 		);
-	console.log('<a:albionoffline:598828015132213259>')
 	let now = new Date().getTime()
 	let timestamp = Math.floor(now / 1000)
 	const embed = new EmbedBuilder()

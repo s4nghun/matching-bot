@@ -32,7 +32,6 @@ async function invitePlayer({ inviterId, inviteeId }) {
                 accepted: 1
             }
         });
-        console.log(partyExists)
         if (!partyExists) {
             await db['Party_Player'].bulkCreate([{
                 partyId: inviterId,
@@ -178,6 +177,18 @@ async function getPartyMembers({ playerId }) {
     }
 }
 
+async function removePlayers({team}){
+    try{
+        await db['Player'].destroy({
+            where:{
+                playerId: {[Op.in]: team}
+            }
+        })
+    } catch(e) {
+        throw e
+    }
+}
+
 
 
 module.exports = {
@@ -186,5 +197,6 @@ module.exports = {
     getPartyMembers,
     getInvitationList,
     joinParty,
-    leaveParty
+    leaveParty,
+    removePlayers
 }

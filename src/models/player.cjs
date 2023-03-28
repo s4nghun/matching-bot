@@ -11,6 +11,14 @@ module.exports = function (sequelize, DataTypes) {
         type: {
             type: DataTypes.STRING(20),
             allowNull: false
+        },
+        messageId: {
+            type: DataTypes.STRING(20),
+            allowNull: false
+        },
+        channelId: {
+            type: DataTypes.STRING(20),
+            allowNull: false
         }
     }, {
         timestamps: false,

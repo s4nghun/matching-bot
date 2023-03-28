@@ -27,12 +27,19 @@ for (let event of events) {
         });
 }
 
+// client.on(Events.MessageDelete, async interaction =>{
+//     if (interaction?.interaction?.id){
+//     console.log('deleted', interaction.interaction.id)
+//     //let int = await interaction.client.fetchInteraction()
+//     }
+//     //interaction.client.fetchInteraction()
+// })
+
 // 파티 수락 인터렉션
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isStringSelectMenu()) return;
     if (interaction.customId != 'selectparty') return;
     const selected = interaction.values[0];
-    console.log(selected)
     await joinParty({playerId: interaction.member.id, partyId: selected})
     await interaction.update({ content: `You joined <@${selected}>'s party!`, components: [] })
 
@@ -46,12 +53,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     //매칭 취소하기
     if (info[0] == "quit"){
         //remove from queue
-        console.log(interaction.member.id)
         await leaveQueue({playerId: interaction.member.id})
         await interaction.message.delete();
 
     }
 })
-// Login with the environment data
 
 client.login(Config.token);

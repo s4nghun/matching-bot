@@ -22,7 +22,6 @@ fs
     return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === 'cjs');
   })
   .forEach(file => {
-    console.log(file)
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });

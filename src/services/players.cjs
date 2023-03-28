@@ -12,10 +12,7 @@ async function createPlayer({ partyIds, party, type }) {
                 playerId: { [Op.in]: partyIds.data }
             }
         })
-        console.log(partyIds, "ids")
-        console.log(count, "res ids")
         let queued = await count.map(v => v.playerId)
-        console.log(queued)
         if (count.length > 0) {
             return { status: false, msg: 'already in queue', data: queued }
         }
@@ -40,6 +37,21 @@ async function createPlayer({ partyIds, party, type }) {
         throw e
     }
 
+}
+
+async function updatePlayer({ playerIds, messageId, channelId}){
+    try{
+        await db['Player'].update({
+            messageId,
+            channelId
+        },{
+            where:{
+                playerId:{[Op.in]: playerIds}
+            }
+        })
+    } catch(e) {
+        throw e
+    }
 }
 
 async function removePlayer({ group }) {
@@ -67,8 +79,24 @@ async function findPlayer({ role, exclude }) {
     }
 }
 
+async function findPlayers({group}) {
+    try{
+        let result = await db['Player'].findAll({
+            where:{
+                playerId: {[Op.in]: group}
+            }
+        })
+        let messageIds = await result.map(v=>{return{messageId: v.messageId, channelId: v.channelId}})
+        return messageIds
+    } catch(e) {
+        throw e
+    }
+}
+
 module.exports = {
     createPlayer,
     removePlayer,
-    findPlayer
+    findPlayer,
+    updatePlayer,
+    findPlayers
 }

@@ -1,20 +1,19 @@
 import { db } from "../models/index.cjs"
-async function fiveGates(group) {
-    let reqPos = [
-        "Tank",
-        "Heal",
-        "RDPS",
-        "RDPS",
-        "MDPS",
-    ]
-    let parties = [];
+import matchTypes from "../data/typeRoles.json" assert { type: "json" };
+async function MMLogic(groupSize, groupType) {
+    
+    // 대기열에 등록된 모든 플레이어를 조회 하여 리스트에 등록합니다.
     let queuedPlayers = await db['Player'].findAll({
         where: {
-            type: "5:hg"
+            type: `${groupSize}:${groupType}`
         }
     })
-    if (queuedPlayers.length < 5) return;
+
+    //큐 등록 인원이 적을 경우, 보류 합니다.
+    if (queuedPlayers.length < groupSize) return{status: false, msg: "in queue", data: []};
+
     let allPlayers = {};
+
     await Promise.all(
         queuedPlayers.map(async v => {
             if (allPlayers[v.playerId] != undefined) {
@@ -29,7 +28,9 @@ async function fiveGates(group) {
             }
         })
     )
+
     let players = [];
+
     Object.keys(allPlayers).map(v => {
         players = [
             ...players,
@@ -40,17 +41,49 @@ async function fiveGates(group) {
         ]
     })
 
-    //players
+    // 모든 파티 리스트를 가져와 등록합니다.
 
-    const groups = [[], [], []];
+    let partyMembers = await db['Party_Player'].findAll({
+        where: {
+            accepted: 1,
+        }
+    })
+
+    let groupPlayer = {}
+    await Promise.all(
+        partyMembers.map(async v => {
+            if (groupPlayer[v.partyId] != undefined) {
+                groupPlayer[v.partyId]["members"] = [
+                    ...groupPlayer[v.partyId]["members"],
+                    v.playerId
+                ]
+            } else {
+                groupPlayer[v.partyId] = {
+                    members: [v.playerId]
+                }
+            }
+        })
+    )
+    let groups =[];
+
+    // 2d 배열에 저장
+    Object.keys(groupPlayer).map(v => {
+        groups = [
+            ...groups,
+            [...groupPlayer[v].members]
+        ]
+    })
+
+    let team={players:[]};
     const shuffledPlayers = players.sort(() => 0.5 - Math.random());
-    const availableRoles = ['top', 'jungle', 'mid', 'adc', 'support'];
+    const availableRoles = matchTypes[`${groupSize}:${groupType}`];
+
 
     while (shuffledPlayers.length > 0) {
-        // Get the next player from the shuffled list
+        // 무작위로 섞인 리스트에서 플레이어를 가져옵니다.
         const player = shuffledPlayers.pop();
 
-        // Check if the player is in a group
+        // 플레이어가 파티가 있는지 확인합니다.
         let groupIndex = -1;
         for (let i = 0; i < groups.length; i++) {
             if (groups[i].includes(player.name)) {
@@ -59,16 +92,16 @@ async function fiveGates(group) {
             }
         }
 
-        // Find the first role that is available and matches one of the player's preferred roles
+        // 선호 포지션을 확인하여 공석이 있는지 확인합니다.
         let roleFound = false;
-        for (let i = 0; i < player.preferredRoles.length; i++) {
-            if (availableRoles.includes(player.preferredRoles[i])) {
-                // Assign the player to the role
+        for (let i = 0; i < player.roles.length; i++) {
+            if (availableRoles.includes(player.roles[i])) {
+                // 플레이어에게 포지션을 부여합니다.
                 team.players.push({
-                    name: player.name,
-                    role: player.preferredRoles[i]
+                    id: player.id,
+                    role: player.roles[i]
                 });
-                availableRoles.splice(availableRoles.indexOf(player.preferredRoles[i]), 1);
+                availableRoles.splice(availableRoles.indexOf(player.roles[i]), 1);
                 roleFound = true;
                 break;
             }
@@ -77,16 +110,16 @@ async function fiveGates(group) {
         // If no available role matches the player's preferred roles, assign the player to the first available role
         if (!roleFound) {
             team.players.push({
-                name: player.name,
+                id: player.id,
                 role: availableRoles.pop()
             });
         }
 
-        // If the player is in a group, assign all other players in the group to the same team
+        // 플레이어가 속한 파티가 있다면, 모두 파티 초대를 합니다.
         if (groupIndex >= 0) {
             const group = groups[groupIndex];
             for (let i = 0; i < group.length; i++) {
-                if (group[i] !== player.name) {
+                if (group[i] !== player.id) {
                     let roleAssigned = false;
                     for (let j = 0; j < availableRoles.length; j++) {
                         const role = availableRoles[j];
@@ -102,7 +135,7 @@ async function fiveGates(group) {
                     }
                     if (!roleAssigned) {
                         team.players.push({
-                            name: group[i],
+                            id: group[i],
                             role: availableRoles.pop()
                         });
                     }
@@ -111,53 +144,14 @@ async function fiveGates(group) {
         }
     }
 
-    // Print the results
-    console.log('Team:');
-    for (let i = 0; i < team.players.length; i++) {
-        console.log(`${team.players[i].name} - ${team.players[i].role}`);
+    //그룹 사이즈가 맞으면 매칭 성공, 아니면 실패
+    if (team.players.length == groupSize){
+        return {status: true, msg: "matched", data: team.players}
+    } else {
+        return {status: false, msg: "in queue", data: []}
     }
-
-
-
-
-
-    for await (const player of queuedPlayers) {
-        if (skippers.includes(player.playerId)) {
-            continue;
-        }
-        let partyMembers = await db['Party_Player'].findAll({
-            where: {
-                playerId: player.playerId,
-                accepted: 1,
-            }
-        })
-    }
-}
-
-async function twoGates() {
-    let reqPos = [
-        "Tank",
-        "Heal",
-        "RDPS",
-        "RDPS",
-        "MDPS",
-    ]
-    let parties = [];
-    let ress = await db['Player'].findAndCountAll({
-        attributes: [
-            "role",
-            [db.sequelize.fn('COUNT', db.sequelize.col('role') === 'Tank'), 'Tank'],
-            [db.sequelize.fn('COUNT', db.sequelize.col('role') === 'Heal'), 'Heal'],
-            [db.sequelize.fn('COUNT', db.sequelize.col('role') === 'RDPS'), 'RDPS'],
-            [db.sequelize.fn('COUNT', db.sequelize.col('role') === 'MDPS'), 'MDPS'],
-        ],
-        group: "role",
-        where: {
-            type: "2:hg"
-        }
-    })
 }
 
 export {
-    fiveGates
+    MMLogic
 }
