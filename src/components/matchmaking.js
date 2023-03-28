@@ -3,7 +3,6 @@ import emoji from "../data/emoji.json" assert { type: "json" };
 import types from "../data/matchTypes.json" assert { type: "json" };
 
 export default async function MatchMaker(interaction, joined, size, type_str) {
-	//const maxPage = Math.ceil(Number(count) / 5)
 	let val = ""
 	let partyMembers = ""
 	let count = joined.length
@@ -19,7 +18,6 @@ export default async function MatchMaker(interaction, joined, size, type_str) {
 			await v.roles.map(j => {
 				partyMembers += `${emoji[j]} `
 			})
-			//partyMembers += " \n\n "
 		})
 	)
 
@@ -30,18 +28,10 @@ export default async function MatchMaker(interaction, joined, size, type_str) {
 				.setCustomId(`quit:${interaction.member.id}`)
 				.setLabel('Quit')
 				.setStyle(ButtonStyle.Danger),
-		)
-		.addComponents(
-			new ButtonBuilder()
-				.setCustomId(`next`)
-				.setLabel('Ready')
-				.setStyle(ButtonStyle.Primary)
-				.setDisabled(true),
 		);
 	let now = new Date().getTime()
-	let timestamp = Math.floor(now / 1000)
 	const embed = new EmbedBuilder()
-		.setTitle(`<:crossed_swords:1089748938334146560> Match Making <t:${Number(timestamp) + 60}:R>`)
+		.setTitle(`<:crossed_swords:1089748938334146560> Match Making <t:${Number(Math.floor(now / 1000)) + 60}:R>`)
 		.addFields({ name: `<:family:1089750064735453205> ${types[type_str]} 매칭 중`, value: val })
 		.addFields({ name: ` ${emoji["Party"]} 파티원`, value: partyMembers })
 		.setColor('Aqua')

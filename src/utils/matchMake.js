@@ -10,7 +10,7 @@ async function MMLogic(groupSize, groupType) {
     })
 
     //큐 등록 인원이 적을 경우, 보류 합니다.
-    if (queuedPlayers.length < groupSize) return{status: false, msg: "in queue", data: []};
+    if (queuedPlayers.length < groupSize) return {status: false, msg: "in queue", data: []};
 
     let allPlayers = {};
 
