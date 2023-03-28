@@ -1,17 +1,17 @@
 module.exports = function (sequelize, DataTypes) {
     const session = sequelize.define('Session', {
-        name: {
+        sessionId: {
             type: DataTypes.STRING(20),
             allowNull: false
         },
-        price: {
+        playerId: {
             type: DataTypes.INTEGER(10),
             allowNull: false
         },
-        imageUrl: {
-            type: DataTypes.STRING(500),
+        role: {
+            type: DataTypes.STRING(20),
         },
-        seller: {
+        type: {
             type: DataTypes.STRING(200),
             allowNull: false
         },

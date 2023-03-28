@@ -13,15 +13,10 @@
     "@napi-rs/canvas": "^0.1.33",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
-    "gif-frames": "^1.0.1",
-    "gifencoder": "^2.0.1",
-    "konva": "^8.4.0",
     "moment": "^2.29.4",
     "mysql2": "^2.3.3",
     "sequelize": "^6.30.0",
-    "sqlite3": "^5.1.6",
-    "unb-api": "^1.2.3",
-    "uuid": "^9.0.0"
+    "sqlite3": "^5.1.6"
   },
   "imports": {
     "#events/*": "./src/events/*",

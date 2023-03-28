@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
-
+import { invitePlayer } from '../../services/party.cjs';
 
 const create = () => {
 	const command = new SlashCommandBuilder()
-		.setName('inviteguild')
+		.setName('inviteparty')
 		.setDescription(
 			'Send an invitation request to a tagged user *Only guild master is allowed to use this command'
 		)
@@ -18,25 +18,13 @@ const create = () => {
 
 const invoke = async (interaction) => {
 	const guild = interaction.guild;
-
-	let master = interaction.options.getUser('user')
-	let user = await guild.members.cache.get(master.id)
-	let memberRole = await guild.roles.cache.find(r => r.name === 'mtc-guild-member');
-	let masterRole = await guild.roles.cache.find(r => r.name === 'mtc-guild-master');
-	if (user._roles.includes(memberRole.id) || user._roles.includes(masterRole.id)) {
-		return await interaction.reply({ content: `User already joined the guild!`, ephemeral: true });
+	let inviteeId = await interaction.options.getUser('user').id
+	let result = await invitePlayer({ inviteeId, inviterId: interaction.member.id })
+	if (result.status) {
+		return await interaction.reply({ content: `You have invited <@${inviteeId}> to your party`, ephemeral: true });
+	} else {
+		return await interaction.reply({ content: `${result.msg}`, ephemeral: true });
 	}
-
-	if (interaction.member.roles.cache.some(role => role.name === 'mtc-guild-master')) {
-		try {
-			await inviteUser({ userId: master.id, userName: master.username, masterId: interaction.member.id })
-			return await interaction.reply({ content: `Successfully invited <@${master.id}> !`, ephemeral: true });
-		} catch (e) {
-			console.log(e)
-			return await interaction.reply({ content: 'Cannot invite tagged user!', ephemeral: true })
-		}
-	}
-	return await interaction.reply({ content: `You are not a guild master!`, ephemeral: true });
 };
 
 export { create, invoke };
