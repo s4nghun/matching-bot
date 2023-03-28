@@ -1,8 +1,11 @@
 import { SlashCommandBuilder } from 'discord.js';
 import MatchMaker from '../../components/matchmaking.js';
-import { createPlayer } from '../../services/players.cjs';
+import { createPlayer, findPlayers, removePlayer, updatePlayer } from '../../services/players.cjs';
 import { getPartyMembers } from '../../services/party.cjs';
 import { leaveQueue } from '../../controllers/queue.js';
+import { MMLogic } from '../../utils/matchMake.js';
+import matchTypes from "../../data/typeRoles.json" assert { type: "json" };
+import emoji from "../../data/emoji.json" assert { type: "json" };
 const create = () => {
     const command = new SlashCommandBuilder()
         .setName('queue')
@@ -65,21 +68,25 @@ const invoke = async (interaction) => {
     const guild = interaction.guild;
     const size = await interaction.options.getInteger('groupsize')
     const type_str = await interaction.options.getString('type')
-    console.log(size, type_str)
 
     let partymembers = [];
     let members = await getPartyMembers({ playerId: interaction.member.id });
-
-    let res = await Promise.all(
+    
+    await Promise.all(
         members.data.map(async v => {
             let roles = [];
             let member = await interaction.guild.members.fetch(v)
+
             await member.roles.cache.some(r => {
-                if (["Tank", "Heal", "RDPS", "MDPS"].includes(r.name)) {
-                    roles.push(r.name)
+                if (matchTypes[`${size}:${type_str}`].includes(r.name)) {
+                    roles=[
+                        ...roles,
+                        r.name
+                    ]
                 }
             })
-            if (roles.length < 1) {
+
+            if (roles.length < 1 || !roles) {
 
                 await interaction.reply({
                     content: `<@${v}> Please enroll at least one role`
@@ -96,10 +103,6 @@ const invoke = async (interaction) => {
             ]
         })
     )
-    console.log('asdf', res)
-    if (!res[0]) {
-        return;
-    }
     if (partymembers.length >= size) {
         return await interaction.reply({ content: 'exceeds queue size', ephemeral: true })
     }
@@ -110,19 +113,50 @@ const invoke = async (interaction) => {
             content: created.msg
         })
     }
-    console.log(partymembers)
 
     let { embed, row } = await MatchMaker(interaction, partymembers, size, type_str)
-    //console.log(interaction.member)
 
-    await interaction.reply({
+    let mmsg = await interaction.reply({
         embeds: [embed],
         components: [row]
     })
+    await updatePlayer({playerIds: members.data, messageId: interaction.token, channelId: interaction.channel.id})
+
+    setTimeout(async()=>{
+        let mmResult = await MMLogic(size, type_str);
+        if (mmResult.status) {
+            let playerIds = mmResult.data.map(v=>v.id)
+            
+//            let messageIds = await findPlayers({group: playerIds}) 
+
+            // await messageIds.map(async v=>{
+            //     //let channel = await interaction.guild.channels.cache.get(v.channelId)
+            //     //let message = await channel.interactions.fetch(v.messageId)
+            //     //console.log(message)
+            //     // let int = await interaction.client.fetchInteraction(v.messageId)
+            //     // console.log(int)
+            //     // .delete().catch(e=>{
+            //     //     console.log("couldn't delete")
+            //     // })
+            // })
+            await removePlayer({group: playerIds})
+            // interaction.deleteReply().catch(e=>{
+            //     console.log("couldn't delete")
+            // })
+            let val=""
+            await mmResult.data.map(v=>{
+                val += `${emoji[v.role]} : <@${v.id}> \n`
+            })
+            return interaction.followUp({content: `MATCHED! \n ${val}`})
+        }
+    }, 3000)
+
     setTimeout(async () => {
         try {
             await leaveQueue({ playerId: interaction.member.id })
-            interaction.deleteReply()
+            interaction.deleteReply().catch(e=>{
+                console.log("couldn't delete")
+            })
         } catch (e) {
             console.log(e)
         }
