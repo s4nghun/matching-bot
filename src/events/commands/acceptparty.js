@@ -22,6 +22,7 @@ const invoke = async (interaction) => {
 	let organizedInvitations = [];
 	await Promise.all(
 		invitations.data.map(async v => {
+			console.log(v)
 			let member = await interaction.guild.members.fetch(v)
 			organizedInvitations = [
 				...organizedInvitations,
