@@ -13,10 +13,9 @@ const create = () => {
 };
 
 const invoke = async (interaction) => {
-	const guild = interaction.guild;
-
 	let invitations = await getInvitationList({ playerId: interaction.member.id })
-	if (invitations.length < 1) {
+	console.log(invitations.data.length)
+	if (invitations.data.length < 1) {
 		return await interaction.reply({ content: `You didn't receive any invitation list`, ephemeral: true });
 	}
 	let organizedInvitations = [];

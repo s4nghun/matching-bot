@@ -3,7 +3,7 @@ import fs from 'fs';
 import { Client, GatewayIntentBits, Events } from 'discord.js';
 import Config from "./src/config/general.js"
 import { db } from "./src/models/index.cjs"
-import {leaveQueue} from "./src/controllers/queue.js"
+import { leaveQueue } from "./src/controllers/queue.js"
 import { joinParty } from './src/services/party.cjs';
 
 db.sequelize.sync().then(() => { console.log('DB connected') })
@@ -40,20 +40,21 @@ client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isStringSelectMenu()) return;
     if (interaction.customId != 'selectparty') return;
     const selected = interaction.values[0];
-    await joinParty({playerId: interaction.member.id, partyId: selected})
+    await joinParty({ playerId: interaction.member.id, partyId: selected })
     await interaction.update({ content: `You joined <@${selected}>'s party!`, components: [] })
 
 });
 
 // 버튼 클릭 인터렉션
 client.on(Events.InteractionCreate, async (interaction) => {
+    console.log("인터렉션 클릭함")
     if (!interaction.isButton()) return;
     const info = interaction.customId.split(':');
 
     //매칭 취소하기
-    if (info[0] == "quit"){
+    if (info[0] == "quit") {
         //remove from queue
-        await leaveQueue({playerId: interaction.member.id})
+        await leaveQueue({ playerId: interaction.member.id })
         await interaction.message.delete();
 
     }
