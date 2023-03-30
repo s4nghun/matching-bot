@@ -20,6 +20,23 @@ async function checkJoined({ inviteeId }) {
     }
 }
 
+async function checkInvited({ inviterId, inviteeId }) {
+    try {
+        let result = await db['Party_Player'].count({
+            where: {
+                playerId: inviteeId,
+                partyId: inviterId
+            }
+        })
+        if (result > 0) {
+            return { status: false, msg: "You already have invited player" }
+        }
+        return { status: true, msg: "" }
+    } catch (e) {
+        throw e
+    }
+}
+
 async function invitePlayer({ inviterId, inviteeId }) {
     try {
         let result = await checkJoined({ inviteeId })
@@ -32,6 +49,13 @@ async function invitePlayer({ inviterId, inviteeId }) {
                 accepted: 1
             }
         });
+        let invited = await checkInvited({
+            inviterId: partyExists.playerId || inviterId,
+            inviteeId
+        })
+        if (!invited.status) {
+            return invited
+        }
         if (!partyExists) {
             await db['Party_Player'].bulkCreate([{
                 partyId: inviterId,
@@ -177,14 +201,14 @@ async function getPartyMembers({ playerId }) {
     }
 }
 
-async function removePlayers({team}){
-    try{
+async function removePlayers({ team }) {
+    try {
         await db['Player'].destroy({
-            where:{
-                playerId: {[Op.in]: team}
+            where: {
+                playerId: { [Op.in]: team }
             }
         })
-    } catch(e) {
+    } catch (e) {
         throw e
     }
 }

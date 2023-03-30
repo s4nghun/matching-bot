@@ -34,7 +34,7 @@ export default async function MatchMaker(interaction, joined, size, type_str) {
 		.setTitle(`<:crossed_swords:1089748938334146560> Match Making <t:${Number(Math.floor(now / 1000)) + 600}:R>`)
 		.addFields({ name: `<:family:1089750064735453205> ${types[type_str]} 매칭 중`, value: val })
 		.addFields({ name: ` ${emoji["Party"]} 파티원`, value: partyMembers })
-		.setColor('Aqua')
+		.setColor('Yellow')
 		.setTimestamp();
 
 	return { embed, row }

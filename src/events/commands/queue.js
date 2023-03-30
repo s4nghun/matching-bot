@@ -4,9 +4,12 @@ import { createPlayer, findPlayers, removePlayer, updatePlayer } from '../../ser
 import { getPartyMembers } from '../../services/party.cjs';
 import { leaveQueue } from '../../controllers/queue.js';
 import { MMLogic } from '../../utils/matchMake.js';
-import fetch from 'node-fetch';
+import { nanoid } from 'nanoid'
+
 import matchTypes from "../../data/typeRoles.json" assert { type: "json" };
 import emoji from "../../data/emoji.json" assert { type: "json" };
+import { createSession, destroySession } from '../../services/session.cjs';
+import ReadyEmbed from '../../components/ready.js';
 const create = () => {
     const command = new SlashCommandBuilder()
         .setName('queue')
@@ -92,9 +95,7 @@ const invoke = async (interaction) => {
 
             await Promise.all(
                 member.roles.cache.map(r => {
-                    console.log("역할들", groupRoles, r.name)
                     if (matchTypes[`${size}:${type_str}`].includes(r.name)) {
-                        console.log(r.name)
                         roles = [
                             ...roles,
                             r.name
@@ -104,12 +105,10 @@ const invoke = async (interaction) => {
             )
 
             if (roles.length < 1) {
-                console.log(roles)
                 invalidPlayers = [
                     ...invalidPlayers,
                     v
                 ]
-
             }
             partymembers = [
                 ...partymembers,
@@ -121,7 +120,6 @@ const invoke = async (interaction) => {
         })
     )
     if (invalidPlayers.length > 0) {
-        console.log(invalidPlayers)
         await interaction.editReply({ content: `Unable to load position information. `, ephemeral: true })
         return
     }
@@ -148,40 +146,86 @@ const invoke = async (interaction) => {
     if (mmResult.status) {
         let playerIds = mmResult.data.map(v => v.id)
 
+
+        //모든 메세지들을 가져와 삭제합니다.
         let messageIds = await findPlayers({ group: playerIds })
         let filtered = messageIds
-        filtered.map(async v => {
+
+
+        await Promise.all(
+            filtered.map(async v => {
+                try {
+                    let channel = await interaction.guild.channels.cache.get(v.channelId)
+                    let message = await channel.messages.fetch(v.messageId)
+                    message.delete().then(() => {
+                        console.log('deleted')
+                    }).catch(e => {
+                        console.log("couldn't delete")
+                    })
+                } catch (e) {
+                    console.log('message not found')
+                }
+            })
+        )
+
+
+        // 큐에서 플레이어들을 제거합니다.
+        await removePlayer({ group: playerIds })
+        let val = ""
+        let sessionQuery = [];
+        let sessionId = nanoid()
+        await Promise.all(
+            mmResult.data.map(v => {
+                sessionQuery = [
+                    ...sessionQuery,
+                    {
+                        sessionId,
+                        playerId: v.id,
+                        role: v.role,
+                        type: `${size}:${type_str}`,
+                        status: 0
+                    }
+                ]
+                val += `${emoji[v.role]} : <@${v.id}> \n`
+            })
+        )
+        // 매칭 성공된 세션을 db에 기록합니다.
+        await createSession({ data: sessionQuery })
+
+        //메세지를 만듭니다.
+        let ready = await ReadyEmbed({
+            party: sessionQuery,
+            size,
+            type_str,
+            sessionId,
+            expiry: false
+        })
+        //메세지를 전송합니다.
+
+        let message = await interaction.channel.send({ content: ready.content, embeds: [ready.embed], components: [ready.row] });
+        setTimeout(async () => {
             try {
-                let channel = await interaction.guild.channels.cache.get(v.channelId)
-                let message = await channel.messages.fetch(v.messageId)
-                message.delete().then(() => {
-                    console.log('deleted')
-                }).catch(e => {
+                await interaction.channel.send({ content: ready.content + `\n\nSession has expired` });
+                await destroySession({ sessionId });
+                message.delete().catch(e => {
                     console.log("couldn't delete")
                 })
             } catch (e) {
-                console.log('message not found')
+                console.log("already deleted")
             }
-        })
-        await removePlayer({ group: playerIds })
-        let val = ""
-        await mmResult.data.map(v => {
-            val += `${emoji[v.role]} : <@${v.id}> \n`
-        })
-        return interaction.channel.send({ content: `MATCHED! \n ${val}` })
+        }, 60000);
+        return
     }
 
 
     setTimeout(async () => {
         try {
             await leaveQueue({ playerId: interaction.member.id })
-            let channel = await interaction.guild.channels.cache.get(interaction.channel.id)
-            let message = await channel.messages.fetch(mmsg.id)
-            message.delete().catch(e => {
+            mmsg.delete().catch(e => {
                 console.log("couldn't delete")
             })
         } catch (e) {
-            console.log(e)
+            console.log("already deleted")
         }
     }, 600000);
     return

@@ -21,6 +21,7 @@ const invoke = async (interaction) => {
 	let inviteeId = await interaction.options.getUser('user').id
 	let result = await invitePlayer({ inviteeId, inviterId: interaction.member.id })
 	if (result.status) {
+		await interaction.options.getUser('user').send(`<@${interaction.member.id}> has invited you to his/her party`)
 		return await interaction.reply({ content: `You have invited <@${inviteeId}> to your party`, ephemeral: true });
 	} else {
 		return await interaction.reply({ content: `${result.msg}`, ephemeral: true });
