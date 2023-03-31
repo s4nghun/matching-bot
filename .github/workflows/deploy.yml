@@ -1,0 +1,43 @@
+name: App install and start
+
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: [self-hosted]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          clean: false
+
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+
+      - name: Install dependencies
+        working-directory: service
+        run: npm install
+
+      - name: Remove old server in ~/soruce (ignore error)
+        run: |
+          rm -rf ~/source || true
+
+      - name: Copy new server to ~/soruce
+        run: |
+          mkdir -p ~/source
+          cp -R ./ ~/source
+
+      - name: Run new server (in background)
+        env:
+          RUNNER_TRACKING_ID: ""
+        run: |
+          cd ~/source
+          nohup pm2 restart matching-bot </dev/null >/dev/null 2>&1 &
