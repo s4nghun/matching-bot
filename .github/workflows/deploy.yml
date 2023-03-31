@@ -24,7 +24,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: service
-        run: npm install
+        run: |
+          source ~/.nvm/nvm.sh;
+          npm install
 
       - name: Remove old server in ~/soruce (ignore error)
         run: |
