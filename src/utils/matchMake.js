@@ -1,7 +1,15 @@
 import { db } from "../models/index.cjs"
 import matchTypes from "../data/typeRoles.json" assert { type: "json" };
 async function MMLogic(groupSize, groupType) {
-    
+    const groupRoles = {
+        "2:hg": ["Heal", "RDPS"],
+        "5:hg": ["Tank", "Heal", "RDPS", "MDPS"],
+        "10:hg": [],
+        "5:c": ["Tank", "Heal", "RDPS", "MDPS"],
+        "20:c": [],
+        "5:ca": ["Tank", "Heal", "RDPS", "MDPS"],
+        "5:a": ["Tank", "Heal", "RDPS", "MDPS"]
+    }
     // 대기열에 등록된 모든 플레이어를 조회 하여 리스트에 등록합니다.
     let queuedPlayers = await db['Player'].findAll({
         where: {
@@ -10,7 +18,7 @@ async function MMLogic(groupSize, groupType) {
     })
 
     //큐 등록 인원이 적을 경우, 보류 합니다.
-    if (queuedPlayers.length < groupSize) return {status: false, msg: "in queue", data: []};
+    if (queuedPlayers.length < groupSize) return { status: false, msg: "in queue", data: [] };
 
     let allPlayers = {};
 
@@ -64,7 +72,7 @@ async function MMLogic(groupSize, groupType) {
             }
         })
     )
-    let groups =[];
+    let groups = [];
 
     // 2d 배열에 저장
     Object.keys(groupPlayer).map(v => {
@@ -74,9 +82,9 @@ async function MMLogic(groupSize, groupType) {
         ]
     })
 
-    let team={players:[]};
+    let team = { players: [] };
     const shuffledPlayers = players.sort(() => 0.5 - Math.random());
-    const availableRoles = matchTypes[`${groupSize}:${groupType}`];
+    const availableRoles = groupRoles[`${groupSize}:${groupType}`];
 
 
     while (shuffledPlayers.length > 0) {
@@ -144,10 +152,10 @@ async function MMLogic(groupSize, groupType) {
     }
 
     //그룹 사이즈가 맞으면 매칭 성공, 아니면 실패
-    if (team.players.length == groupSize){
-        return {status: true, msg: "matched", data: team.players}
+    if (team.players.length == groupSize) {
+        return { status: true, msg: "matched", data: team.players }
     } else {
-        return {status: false, msg: "in queue", data: []}
+        return { status: false, msg: "in queue", data: [] }
     }
 }
 

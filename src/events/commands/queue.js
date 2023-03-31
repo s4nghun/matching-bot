@@ -95,7 +95,7 @@ const invoke = async (interaction) => {
 
             await Promise.all(
                 member.roles.cache.map(r => {
-                    if (matchTypes[`${size}:${type_str}`].includes(r.name)) {
+                    if (groupRoles[`${size}:${type_str}`].includes(r.name)) {
                         roles = [
                             ...roles,
                             r.name
