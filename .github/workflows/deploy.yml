@@ -13,33 +13,10 @@ jobs:
     runs-on: [self-hosted]
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          clean: false
-
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
-
-      - name: Install dependencies
-        working-directory: service
-        run: |
-          source ~/.nvm/nvm.sh;
-          npm install
-
-      - name: Remove old server in ~/soruce (ignore error)
-        run: |
-          rm -rf ~/source || true
-
-      - name: Copy new server to ~/soruce
-        run: |
-          mkdir -p ~/source
-          cp -R ./ ~/source
-
-      - name: Run new server (in background)
-        env:
-          RUNNER_TRACKING_ID: ""
-        run: |
-          cd ~/source
-          pm2 restart matching-bot
+      - uses: actions/checkout@v3 #checkout code from repository, so we code downloaded in runner.
+      - uses: actions/setup-node@v3 #setup nodejs in our runner
+      - run: npm install pm2@latest -g #install pm2 global
+      - run: pm2 -V #check pm2 version
+      - run: pm2 list #check pm2 list
+      #running pm2 in mode cluster and --watch set to auto restart if index.js have changes.
+      - run: pm2 start index.js --watch -i max
