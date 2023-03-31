@@ -50,7 +50,7 @@ async function invitePlayer({ inviterId, inviteeId }) {
             }
         });
         let invited = await checkInvited({
-            inviterId: partyExists.playerId || inviterId,
+            inviterId: partyExists?.playerId || inviterId,
             inviteeId
         })
         if (!invited.status) {
