@@ -150,7 +150,7 @@ async function MMLogic(groupSize, groupType) {
             }
         }
     }
-
+    console.log(team.players)
     //그룹 사이즈가 맞으면 매칭 성공, 아니면 실패
     if (team.players.length == groupSize) {
         return { status: true, msg: "matched", data: team.players }
