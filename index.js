@@ -69,14 +69,14 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         if (newCount == 0) {
             // console.log(oldState.channel)
             console.log('error', oldState?.channel?.parentId, oldCount)
-            if (oldState?.channel?.parentId == "1089720859574423642") {
+            if (oldState?.channel?.parentId == "1060737713063612489") {
                 oldState.channel.delete();
             }
         }
     } catch (e) {
         console.log(e)
         console.log('error', newState, oldCount)
-        if (oldState?.channel?.parentId == "1089720859574423642" && oldCount == 0) {
+        if (oldState?.channel?.parentId == "1060737713063612489" && oldCount == 0) {
             oldState.channel.delete();
         }
     }
@@ -124,7 +124,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             let partyCh = await interaction.guild.channels.create({
                 name: `${interaction.member.displayName}-${size}v${size} ${matchType[type_str]}`,
                 type: ChannelType.GuildVoice,
-                parent: "1089720859574423642",
+                parent: "1060737713063612489",
                 // your permission overwrites or other options here
             });
 
