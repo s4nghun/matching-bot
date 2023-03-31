@@ -11,14 +11,11 @@ export default async function ReadyEmbed({
     }
     let partyMembers = ""
     let content = "";
-    console.log(party)
     await Promise.all(
         party.map(async v => {
-            console.log(v.playerId)
             let playerId = v.playerId;
-            console.log(playerId)
-            content += `<@${playerId}> `
             if (v.status == 1) {
+                content += `<@${String(playerId)}> `
                 partyMembers += `\n :white_check_mark: [ ${emoji[v.role]} ] <@${String(playerId)}>`
             } else {
                 partyMembers += `\n <a:loader:1089743842158329896> [ ${emoji[v.role]} ] <@${String(playerId)}> `

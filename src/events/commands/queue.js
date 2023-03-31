@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 
 import matchTypes from "../../data/typeRoles.json" assert { type: "json" };
 import emoji from "../../data/emoji.json" assert { type: "json" };
-import { createSession, destroySession } from '../../services/session.cjs';
+import { createSession, destroySession, findSession } from '../../services/session.cjs';
 import ReadyEmbed from '../../components/ready.js';
 const create = () => {
     const command = new SlashCommandBuilder()
@@ -205,11 +205,28 @@ const invoke = async (interaction) => {
         let message = await interaction.channel.send({ content: ready.content, embeds: [ready.embed], components: [ready.row] });
         setTimeout(async () => {
             try {
-                await interaction.channel.send({ content: ready.content + `\n\nSession has expired` });
-                await destroySession({ sessionId });
-                message.delete().catch(e => {
-                    console.log("couldn't delete")
+                //취소한 사람은 큐에서 제거 해야함 [필요]
+                let ignored = await findSession({ sessionId });
+                let sessionPlayers = ignored.map(v => (v.status == 0) && v.playerId);
+                console.log(sessionPlayers)
+                let countReady = 0;
+                await ignored.map(v => {
+                    if (v.status == 1) {
+                        countReady++;
+                    }
                 })
+                if (countReady == size) { return; }
+                await removePlayer({ group: sessionPlayers })
+                message.delete()
+                    .then(async () => {
+                        await interaction.channel.send({ content: ready.content + `\n\nSession has expired` });
+                        await destroySession({ sessionId });
+                    })
+                    .catch(e => {
+                        console.log("couldn't delete")
+                    })
+
+
             } catch (e) {
                 console.log("already deleted")
             }

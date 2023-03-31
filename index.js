@@ -1,6 +1,6 @@
 import { } from 'dotenv/config';
 import fs from 'fs';
-import { Client, GatewayIntentBits, Events } from 'discord.js';
+import { Client, GatewayIntentBits, Events, ChannelType } from 'discord.js';
 import Config from "./src/config/general.js"
 import { db } from "./src/models/index.cjs"
 import { leaveQueue } from "./src/controllers/queue.js"
@@ -8,9 +8,18 @@ import { joinParty } from './src/services/party.cjs';
 import ReadyEmbed from './src/components/ready.js';
 import { destroySession, findSession, updateSession } from './src/services/session.cjs';
 
+import matchType from "./src/data/matchTypes.json" assert {type: "json"}
+
 db.sequelize.sync().then(() => { console.log('DB connected') })
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds
+        , GatewayIntentBits.GuildMessages
+        , GatewayIntentBits.MessageContent
+        , GatewayIntentBits.GuildVoiceStates
+    ]
+});
 
 const events = fs
     .readdirSync('./src/events')
@@ -47,6 +56,32 @@ client.on(Events.InteractionCreate, async interaction => {
 
 });
 
+client.on('voiceStateUpdate', (oldState, newState) => {
+    // check for bot
+    if (oldState.member.user.bot) return;
+    let oldCount = oldState?.channel?.members.size || 0;
+    let newCount = newState.channel?.members.size || 0;
+    // the rest of your code
+    console.log('oldState', oldState?.channel?.members.size || 0)
+    console.log('newState', newState.channel?.members.size || 0)
+    //console.log('newState', newState)//.channel.members.size)
+    try {
+        if (newCount == 0) {
+            // console.log(oldState.channel)
+            console.log('error', oldState?.channel?.parentId, oldCount)
+            if (oldState?.channel?.parentId == "1089720859574423642") {
+                oldState.channel.delete();
+            }
+        }
+    } catch (e) {
+        console.log(e)
+        console.log('error', newState, oldCount)
+        if (oldState?.channel?.parentId == "1089720859574423642" && oldCount == 0) {
+            oldState.channel.delete();
+        }
+    }
+})
+
 // 버튼 클릭 인터렉션
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isButton()) return;
@@ -82,8 +117,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
             })
         )
         if (countReady == size) {
-            await interaction.message.edit({ embeds: [], components: [] })
-            return interaction.channel.send({ content: 'need to implement creating channel' })
+            let { embed, content } = await ReadyEmbed({ interaction, party, size, type_str, sessionId, expiry })
+            console.log(content)
+            await interaction.message.edit({ content, embeds: [embed], components: [] })
+
+            let partyCh = await interaction.guild.channels.create({
+                name: `${interaction.member.displayName}-${size}v${size} ${matchType[type_str]}`,
+                type: ChannelType.GuildVoice,
+                parent: "1089720859574423642",
+                // your permission overwrites or other options here
+            });
+
+            let timeout = setTimeout(function () {
+                //console.log(partyCh);
+                partyCh.delete();
+            }, 30000);
+            client.on("voiceStateUpdate", (oldState, newState) => {
+                clearTimeout(timeout);
+            })
+            let invite = await partyCh.createInvite(
+                {
+                    maxAge: 10 * 60 * 1000, // maximum time for the invite, in milliseconds
+                    maxUses: 10 // maximum times it can be used
+                },
+                `Party Channel created`
+            )
+                .catch(console.log);
+
+            return interaction.channel.send({ content: `${content}\n${invite}` })
         }
         let { embed } = await ReadyEmbed({ interaction, party, size, type_str, sessionId, expiry })
         //matched!
@@ -92,6 +153,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         //큐 취소
         let sessionId = info[1];
         await destroySession({ sessionId });
+
+        //취소한 사람은 큐에서 제거 해야함 [필요]
+
         await interaction.message.delete().catch(() => { console.log('hehe') })
     }
 })
