@@ -40,4 +40,4 @@ jobs:
           RUNNER_TRACKING_ID: ""
         run: |
           cd ~/source
-          nohup pm2 restart matching-bot </dev/null >/dev/null 2>&1 &
+          pm2 restart matching-bot
